@@ -1,0 +1,506 @@
+<html><head><base href="." target="_blank"><title>Pixel Master - Create Stunning Pixel Art</title>
+<style>
+:root {
+  --primary: #4a90e2;
+  --secondary: #f39c12;
+  --dark: #2c3e50;
+  --light: #ecf0f1;
+}
+
+* {
+  margin: 0;
+  padding: 0;
+  box-sizing: border-box;
+  font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+}
+
+body {
+  background: #1a1a1a;
+  color: var(--light);
+}
+
+.container {
+  max-width: 1200px;
+  margin: 0 auto;
+  padding: 20px;
+}
+
+/* Main Menu Styles */
+.main-menu {
+  text-align: center;
+  padding: 40px 0;
+}
+
+.title {
+  font-size: 4em;
+  color: var(--primary);
+  margin-bottom: 40px;
+  text-shadow: 0 0 10px rgba(74, 144, 226, 0.3);
+}
+
+.menu-buttons {
+  display: flex;
+  flex-direction: column;
+  gap: 20px;
+  max-width: 400px;
+  margin: 0 auto;
+}
+
+.btn {
+  padding: 15px 30px;
+  font-size: 1.2em;
+  border: none;
+  border-radius: 8px;
+  cursor: pointer;
+  transition: all 0.3s ease;
+  background: var(--primary);
+  color: white;
+}
+
+.btn:hover {
+  transform: translateY(-2px);
+  box-shadow: 0 5px 15px rgba(0,0,0,0.3);
+}
+
+/* Canvas Creation Modal */
+.modal {
+  display: none;
+  position: fixed;
+  top: 0;
+  left: 0;
+  width: 100%;
+  height: 100%;
+  background: rgba(0,0,0,0.8);
+  z-index: 100;
+}
+
+.modal-content {
+  position: absolute;
+  top: 50%;
+  left: 50%;
+  transform: translate(-50%, -50%);
+  background: var(--dark);
+  padding: 30px;
+  border-radius: 12px;
+  min-width: 300px;
+}
+
+/* Drawing Interface */
+.drawing-interface {
+  display: none;
+  padding: 20px;
+}
+
+.toolbar {
+  display: flex;
+  gap: 10px;
+  padding: 10px;
+  background: var(--dark);
+  border-radius: 8px;
+  margin-bottom: 20px;
+}
+
+.tool {
+  padding: 10px;
+  background: var(--primary);
+  border: none;
+  border-radius: 4px;
+  color: white;
+  cursor: pointer;
+}
+
+.color-picker {
+  width: 40px;
+  height: 40px;
+  padding: 0;
+  border: none;
+  border-radius: 4px;
+  cursor: pointer;
+}
+
+.canvas-container {
+  display: flex;
+  justify-content: center;
+  margin-top: 20px;
+}
+
+#pixelCanvas {
+  background: white;
+  cursor: crosshair;
+  image-rendering: pixelated;
+}
+
+.size-selector {
+  margin: 10px 0;
+  padding: 8px;
+  border-radius: 4px;
+}
+
+/* Gallery View */
+.gallery {
+  display: none;
+  grid-template-columns: repeat(auto-fill, minmax(200px, 1fr));
+  gap: 20px;
+  padding: 20px;
+}
+
+.gallery-item {
+  background: var(--dark);
+  padding: 10px;
+  border-radius: 8px;
+  cursor: pointer;
+}
+
+.gallery-item img {
+  width: 100%;
+  height: auto;
+}
+
+.gallery-message {
+  grid-column: 1/-1;
+  text-align: center;
+  padding: 20px;
+  color: var(--light);
+  font-style: italic;
+}
+
+.gallery-item-name {
+  margin-top: 10px;
+  text-align: center;
+  color: var(--light);
+}
+
+.gallery-actions {
+  display: flex;
+  gap: 5px;
+  margin-top: 10px;
+}
+
+.gallery-btn {
+  flex: 1;
+  padding: 5px;
+  border: none;
+  border-radius: 4px;
+  background: var(--primary);
+  color: white;
+  cursor: pointer;
+}
+</style>
+</head>
+<body>
+<div class="container">
+  <!-- Main Menu -->
+  <div class="main-menu" id="mainMenu">
+    <h1 class="title">Pixel Master</h1>
+    <div class="menu-buttons">
+      <button class="btn" onclick="showNewCanvasModal()">Create New Canvas</button>
+      <button class="btn" onclick="showGallery()">My Gallery</button>
+      <input type="file" id="importFile" accept="image/*" style="display: none" onchange="importImage(event)">
+      <button class="btn" onclick="document.getElementById(&apos;importFile&apos;).click()">Import Image</button>
+    </div>
+  </div>
+
+  <!-- New Canvas Modal -->
+  <div class="modal" id="newCanvasModal">
+    <div class="modal-content">
+      <h2>Create New Canvas</h2>
+      <input type="text" id="canvasName" placeholder="Canvas Name" style="margin: 10px 0; padding: 5px;">
+      <select id="canvasSize" class="size-selector">
+        <option value="16">16 x 16</option>
+        <option value="32">32 x 32</option>
+        <option value="64">64 x 64</option>
+        <option value="128">128 x 128</option>
+      </select>
+      <button class="btn" onclick="createNewCanvas()">Create</button>
+      <button class="btn" onclick="hideNewCanvasModal()">Cancel</button>
+    </div>
+  </div>
+
+  <!-- Drawing Interface -->
+  <div class="drawing-interface" id="drawingInterface">
+    <div class="toolbar">
+      <button class="tool" onclick="setTool(&apos;pencil&apos;)">&#x270f;&#xfe0f; Pencil</button>
+      <button class="tool" onclick="setTool(&apos;eraser&apos;)">&#x1f9f9; Eraser</button>
+      <button class="tool" onclick="setTool(&apos;fill&apos;)">&#x1faa3; Fill</button>
+      <button class="tool" onclick="setTool(&apos;picker&apos;)">&#x1f446; Color Picker</button>
+      <input type="color" class="color-picker" id="colorPicker" value="#000000">
+      <button class="tool" onclick="clearCanvas()">&#x1f5d1;&#xfe0f; Clear</button>
+      <button class="tool" onclick="undo()">&#x21a9;&#xfe0f; Undo</button>
+      <button class="tool" onclick="redo()">&#x21aa;&#xfe0f; Redo</button>
+      <button class="tool" onclick="downloadCanvas()">&#x1f4be; Save</button>
+      <button class="tool" onclick="showMainMenu()">&#x1f3e0; Menu</button>
+    </div>
+    <div class="canvas-container">
+      <canvas id="pixelCanvas"></canvas>
+    </div>
+  </div>
+
+  <!-- Gallery View -->
+  <div class="gallery" id="gallery">
+    <!-- Gallery items will be dynamically added here -->
+    <div class="gallery-message" id="galleryMessage">No saved artwork yet</div>
+    <button class="btn" style="grid-column: 1/-1;" onclick="showMainMenu()">Back to Menu</button>
+  </div>
+</div>
+
+<script>let currentTool = 'pencil';
+let currentColor = '#000000';
+let canvas, ctx;
+let canvasData = [];
+let undoStack = [];
+let redoStack = [];
+let isDrawing = false;
+let lastX, lastY;
+let savedArtwork = [];
+function setTool(tool) {
+  currentTool = tool;
+  document.querySelectorAll('.tool').forEach(btn => btn.style.background = '#4a90e2');
+  event.target.style.background = '#2980b9';
+}
+function createNewCanvas() {
+  const name = document.getElementById('canvasName').value;
+  const size = parseInt(document.getElementById('canvasSize').value);
+  if (!name) {
+    alert('Please enter a canvas name');
+    return;
+  }
+  hideNewCanvasModal();
+  showDrawingInterface();
+  canvas = document.getElementById('pixelCanvas');
+  canvas.width = size;
+  canvas.height = size;
+  canvas.style.width = '512px';
+  canvas.style.height = '512px';
+  ctx = canvas.getContext('2d');
+  ctx.imageSmoothingEnabled = false;
+  ctx.fillStyle = 'white';
+  ctx.fillRect(0, 0, canvas.width, canvas.height);
+  canvas.addEventListener('mousedown', startDrawing);
+  canvas.addEventListener('mousemove', draw);
+  canvas.addEventListener('mouseup', stopDrawing);
+  canvas.addEventListener('mouseleave', stopDrawing);
+  document.getElementById('colorPicker').addEventListener('input', e => {
+    currentColor = e.target.value;
+  });
+  const artworkData = {
+    name: name,
+    size: size,
+    date: new Date().toISOString()
+  };
+  canvas.dataset.name = name;
+  saveState();
+}
+function startDrawing(e) {
+  isDrawing = true;
+  [lastX, lastY] = getMousePos(canvas, e);
+  if (currentTool === 'picker') {
+    const pixelData = ctx.getImageData(Math.floor(lastX), Math.floor(lastY), 1, 1).data;
+    currentColor = `#${[...pixelData].slice(0, 3).map(x => x.toString(16).padStart(2, '0')).join('')}`;
+    document.getElementById('colorPicker').value = currentColor;
+    return;
+  }
+  if (currentTool === 'fill') {
+    floodFill(Math.floor(lastX), Math.floor(lastY), currentColor);
+    saveState();
+  } else if (currentTool === 'pencil' || currentTool === 'eraser') {
+    const pixelX = Math.floor(lastX);
+    const pixelY = Math.floor(lastY);
+    ctx.fillStyle = currentTool === 'eraser' ? 'white' : currentColor;
+    ctx.fillRect(pixelX, pixelY, 1, 1);
+  }
+}
+function draw(e) {
+  if (!isDrawing) return;
+  const [x, y] = getMousePos(canvas, e);
+  const pixelX = Math.floor(x);
+  const pixelY = Math.floor(y);
+  if (currentTool === 'picker') {
+    const pixelData = ctx.getImageData(pixelX, pixelY, 1, 1).data;
+    currentColor = `#${[...pixelData].slice(0, 3).map(x => x.toString(16).padStart(2, '0')).join('')}`;
+    document.getElementById('colorPicker').value = currentColor;
+    return;
+  }
+  if (currentTool === 'pencil' || currentTool === 'eraser') {
+    ctx.fillStyle = currentTool === 'eraser' ? 'white' : currentColor;
+    ctx.fillRect(pixelX, pixelY, 1, 1);
+  }
+  [lastX, lastY] = [pixelX, pixelY];
+}
+function stopDrawing() {
+  if (isDrawing) {
+    isDrawing = false;
+    saveState();
+  }
+}
+function getMousePos(canvas, e) {
+  const rect = canvas.getBoundingClientRect();
+  const scaleX = canvas.width / rect.width;
+  const scaleY = canvas.height / rect.height;
+  return [(e.clientX - rect.left) * scaleX, (e.clientY - rect.top) * scaleY];
+}
+function floodFill(startX, startY, fillColor) {
+  const imageData = ctx.getImageData(0, 0, canvas.width, canvas.height);
+  const pixels = imageData.data;
+  const startPos = (startY * canvas.width + startX) * 4;
+  const startR = pixels[startPos];
+  const startG = pixels[startPos + 1];
+  const startB = pixels[startPos + 2];
+  const fillR = parseInt(fillColor.slice(1, 3), 16);
+  const fillG = parseInt(fillColor.slice(3, 5), 16);
+  const fillB = parseInt(fillColor.slice(5, 7), 16);
+  function matchesStart(pos) {
+    return pixels[pos] === startR && pixels[pos + 1] === startG && pixels[pos + 2] === startB;
+  }
+  function fill(pos) {
+    pixels[pos] = fillR;
+    pixels[pos + 1] = fillG;
+    pixels[pos + 2] = fillB;
+    pixels[pos + 3] = 255;
+  }
+  const stack = [[startX, startY]];
+  while (stack.length) {
+    const [x, y] = stack.pop();
+    const pos = (y * canvas.width + x) * 4;
+    if (!matchesStart(pos)) continue;
+    fill(pos);
+    if (x > 0) stack.push([x - 1, y]);
+    if (x < canvas.width - 1) stack.push([x + 1, y]);
+    if (y > 0) stack.push([x, y - 1]);
+    if (y < canvas.height - 1) stack.push([x, y + 1]);
+  }
+  ctx.putImageData(imageData, 0, 0);
+}
+function saveState() {
+  undoStack.push(ctx.getImageData(0, 0, canvas.width, canvas.height));
+  redoStack = [];
+}
+function undo() {
+  if (undoStack.length > 1) {
+    redoStack.push(undoStack.pop());
+    ctx.putImageData(undoStack[undoStack.length - 1], 0, 0);
+  }
+}
+function redo() {
+  if (redoStack.length > 0) {
+    const state = redoStack.pop();
+    undoStack.push(state);
+    ctx.putImageData(state, 0, 0);
+  }
+}
+function showNewCanvasModal() {
+  document.getElementById('newCanvasModal').style.display = 'block';
+}
+function hideNewCanvasModal() {
+  document.getElementById('newCanvasModal').style.display = 'none';
+}
+function showDrawingInterface() {
+  document.getElementById('mainMenu').style.display = 'none';
+  document.getElementById('drawingInterface').style.display = 'block';
+}
+function showMainMenu() {
+  document.getElementById('drawingInterface').style.display = 'none';
+  document.getElementById('gallery').style.display = 'none';
+  document.getElementById('mainMenu').style.display = 'block';
+}
+function showGallery() {
+  document.getElementById('mainMenu').style.display = 'none';
+  const galleryDiv = document.getElementById('gallery');
+  galleryDiv.style.display = 'grid';
+  const saved = localStorage.getItem('pixelMasterGallery');
+  let savedArtwork = saved ? JSON.parse(saved) : [];
+  galleryDiv.innerHTML = '';
+  const backButton = document.createElement('button');
+  backButton.className = 'btn';
+  backButton.style.gridColumn = '1/-1';
+  backButton.onclick = showMainMenu;
+  backButton.textContent = 'Back to Menu';
+  galleryDiv.appendChild(backButton);
+  if (savedArtwork.length === 0) {
+    const message = document.createElement('div');
+    message.className = 'gallery-message';
+    message.textContent = 'No saved artwork yet';
+    galleryDiv.appendChild(message);
+    return;
+  }
+  savedArtwork.forEach((artwork, index) => {
+    const item = document.createElement('div');
+    item.className = 'gallery-item';
+    item.innerHTML = `
+      <img src="${artwork.image}" alt="${artwork.name}">
+      <div class="gallery-item-name">${artwork.name}</div>
+      <div class="gallery-actions">
+        <button class="gallery-btn" onclick="editArtwork(${index})">Edit</button>
+        <button class="gallery-btn" onclick="deleteArtwork(${index})">Delete</button>
+      </div>
+    `;
+    galleryDiv.appendChild(item);
+  });
+}
+function downloadCanvas() {
+  const artworkName = canvas.dataset.name || 'untitled';
+  const artworkData = {
+    name: artworkName,
+    image: canvas.toDataURL(),
+    date: new Date().toISOString()
+  };
+  savedArtwork.push(artworkData);
+  localStorage.setItem('pixelMasterGallery', JSON.stringify(savedArtwork));
+  const link = document.createElement('a');
+  link.download = `${artworkName}.png`;
+  link.href = canvas.toDataURL();
+  link.click();
+}
+function importImage(event) {
+  const file = event.target.files[0];
+  const reader = new FileReader();
+  reader.onload = function (e) {
+    const img = new Image();
+    img.onload = function () {
+      showDrawingInterface();
+      canvas = document.getElementById('pixelCanvas');
+      ctx = canvas.getContext('2d');
+      canvas.width = img.width;
+      canvas.height = img.height;
+      canvas.style.width = '512px';
+      canvas.style.height = '512px';
+      ctx.drawImage(img, 0, 0);
+      saveState();
+    };
+    img.src = e.target.result;
+  };
+  reader.readAsDataURL(file);
+}
+function clearCanvas() {
+  ctx.fillStyle = 'white';
+  ctx.fillRect(0, 0, canvas.width, canvas.height);
+  saveState();
+}
+function editArtwork(index) {
+  const artwork = savedArtwork[index];
+  showDrawingInterface();
+  const img = new Image();
+  img.onload = function () {
+    canvas = document.getElementById('pixelCanvas');
+    ctx = canvas.getContext('2d');
+    canvas.width = img.width;
+    canvas.height = img.height;
+    canvas.style.width = '512px';
+    canvas.style.height = '512px';
+    canvas.dataset.name = artwork.name;
+    ctx.imageSmoothingEnabled = false;
+    ctx.drawImage(img, 0, 0);
+    saveState();
+  };
+  img.src = artwork.image;
+}
+function deleteArtwork(index) {
+  if (confirm('Are you sure you want to delete this artwork?')) {
+    savedArtwork.splice(index, 1);
+    localStorage.setItem('pixelMasterGallery', JSON.stringify(savedArtwork));
+    showGallery();
+  }
+}
+document.getElementById('colorPicker').addEventListener('input', e => {
+  currentColor = e.target.value;
+});</script>
+</body></html>
